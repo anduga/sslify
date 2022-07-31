@@ -21,7 +21,6 @@ firefox https://localhost:8443
 ```
 
 ## TODO
- * allow for TLS certificate configuration
  * see how IPv6 works
 
 ## BUGS
