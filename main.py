@@ -18,12 +18,26 @@ def parse_addr(addr):
     return host, port
 
 def load_cert(context, certfile, keyfile):
+    tmp = None
+    if os.environ.get("TLS_CERT"):
+        certfile = tempfile.mktemp(suffix='.pem')
+        with open(certfile, 'w') as f:
+            f.write(os.environ.get("TLS_CERT").replace('\\n', '\n'))
+            f.write('\n')
+            f.write(os.environ.get("TLS_KEY", "").replace('\\n', '\n'))
+        keyfile = None
+        tmp = certfile
+
     try:
         context.load_cert_chain(certfile, keyfile)
     except OSError:
-        traceback.print_exc()
-        print(f'\n\nmaybe try:\nopenssl req -subj /CN=localhost -new -x509 -days 365 -nodes -out {certfile} -keyout {keyfile}\n\n')
-        sys.exit(1)
+        if not tmp:
+            traceback.print_exc()
+            print(f'\n\nmaybe try:\nopenssl req -subj /CN=localhost -new -x509 -days 365 -nodes -out {certfile} -keyout {keyfile}\n\n')
+            sys.exit(1)
+    finally:
+        if tmp:
+            os.remove(tmp)
 
 def handle_client(sconn, backend):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as bconn:
